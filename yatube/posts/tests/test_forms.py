@@ -7,7 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from ..models import Group, Post
+from ..models import Comment, Group, Post
 
 User = get_user_model()
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
@@ -16,14 +16,25 @@ TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class PostCreateFormTest(TestCase):
     @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.author = User.objects.create_user(username='author')
+        cls.author_client = Client()
+        cls.author_client.force_login(cls.author)
+        cls.group = Group.objects.create(
+            title='Тестовая группа',
+            slug='test-slug',
+        )
+        cls.post = Post.objects.create(
+            author=cls.author,
+            text='Тестовый пост',
+            group=cls.group,
+        )
+
+    @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
         shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
-
-    def setUp(self):
-        self.author = User.objects.create_user(username='author')
-        self.author_client = Client()
-        self.author_client.force_login(self.author)
 
     def test_create_post(self):
         """Валидная форма создает запись в Post."""
@@ -60,16 +71,6 @@ class PostCreateFormTest(TestCase):
 
     def test_edit_post(self):
         """Валидная форма изменяет запись в Post."""
-        self.group = Group.objects.create(
-            title='Тестовая группа',
-            slug='test-slug',
-            description='Тестовое описание',
-        )
-        self.post = Post.objects.create(
-            author=self.author,
-            text='Тестовый пост',
-            group=self.group,
-        )
         posts_count = Post.objects.count()
         form_data = {'text': 'Другой текст', 'group': self.group.id}
         response = self.author_client.post(
@@ -85,3 +86,31 @@ class PostCreateFormTest(TestCase):
         self.assertEqual(response.context['post'].id, self.post.id)
         self.assertEqual(response.context['post'].text, form_data['text'])
         self.assertEqual(response.context['post'].group, self.post.group)
+
+    def test_comment_appears_on_post_page(self):
+        """Проверяем, что после успешной отправки комментарий
+        появляется на странице поста."""
+        comments_count = Comment.objects.count()
+        form_data = {'text': 'Тестовый комментарий'}
+        self.author_client.post(
+            reverse('posts:add_comment', kwargs={'post_id': self.post.id}),
+            data=form_data,
+            follow=True,
+        )
+        self.assertEqual(Comment.objects.count(), comments_count + 1)
+        self.assertTrue(
+            Comment.objects.filter(text=form_data['text']).exists()
+        )
+
+    def test_anonymous_user_cannot_comment(self):
+        """Проверка, что анонимный пользователь
+        не может оставить комментарий.
+        """
+        comments_count = Comment.objects.count()
+        form_data = {'text': 'Тестовый комментарий'}
+        self.client.post(
+            reverse('posts:add_comment', args=(self.post.id,)),
+            data=form_data,
+            follow=True,
+        )
+        self.assertEqual(Comment.objects.count(), comments_count)

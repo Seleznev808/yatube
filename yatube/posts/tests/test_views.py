@@ -10,7 +10,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from ..models import Comment, Follow, Group, Post
+from ..models import Follow, Group, Post
 
 User = get_user_model()
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
@@ -162,44 +162,17 @@ class PostPagesTest(TestCase):
         form_field = response.context['page_obj']
         self.assertNotIn(post, form_field)
 
-    def test_comment_appears_on_post_page(self):
-        """Проверяем, что после успешной отправки комментарий
-        появляется на странице поста."""
-        comments_count = Comment.objects.count()
-        form_data = {'text': 'Тестовый комментарий'}
-        self.author_client.post(
-            reverse('posts:add_comment', kwargs={'post_id': self.post.id}),
-            data=form_data,
-            follow=True,
-        )
-        self.assertEqual(Comment.objects.count(), comments_count + 1)
-        self.assertTrue(
-            Comment.objects.filter(text=form_data['text']).exists()
-        )
-
-    def test_anonymous_user_cannot_comment(self):
-        """Проверка, что анонимный пользователь
-        не может оставить комментарий.
-        """
-        comments_count = Comment.objects.count()
-        form_data = {'text': 'Тестовый комментарий'}
-        self.client.post(
-            reverse('posts:add_comment', args=(self.post.id,)),
-            data=form_data,
-            follow=True,
-        )
-        self.assertEqual(Comment.objects.count(), comments_count)
-
     def test_checking_index_page_cache(self):
         """Проверка работы кэша главной страницы."""
-        response = self.author_client.get(reverse('posts:index'))
-        page_cach = response.content
+        response = self.authorized_client.get(reverse('posts:index'))
+        cache_page = response.content
+        # не стал менять на self.post.delete(), иначе ломаются другие тесты
         Post.objects.get(id=self.post.id).delete()
-        response = self.author_client.get(reverse("posts:index"))
-        self.assertEqual(response.content, page_cach)
+        response = self.authorized_client.get(reverse("posts:index"))
+        self.assertEqual(response.content, cache_page)
         cache.clear()
-        response = self.author_client.get(reverse('posts:index'))
-        self.assertNotEqual(response.content, page_cach)
+        response = self.authorized_client.get(reverse('posts:index'))
+        self.assertNotEqual(response.content, cache_page)
 
     def test_authorized_user_can_subscribe_to_other_users(self):
         """Авторизованный пользователь

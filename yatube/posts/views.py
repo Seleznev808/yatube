@@ -8,7 +8,7 @@ from .models import Comment, Follow, Group, Post, User
 
 
 def index(request):
-    post_list = Post.objects.all()
+    post_list = Post.objects.select_related('group').all()
     page_obj = custom_paginator(
         request,
         post_list,
@@ -38,7 +38,11 @@ def group_posts(request, slug):
 def profile(request, username):
     author = get_object_or_404(User, username=username)
     author_posts = Post.objects.filter(author=author)
-    following = author.following.exists()
+    request.user.is_authenticated
+    following = (
+        request.user.is_authenticated
+        and author.following.filter(user=request.user).exists()
+    )
     page_obj = custom_paginator(
         request,
         author_posts,
