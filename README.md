@@ -48,6 +48,7 @@ http://127.0.0.1:8000/
 
 ### Технологии
 * Django 2.2.16
+* Bootstrap
 
 ### Автор
 [Селезнев Василий](https://github.com/Seleznev808)
