@@ -4,7 +4,7 @@
 
 Социальная сеть для публикации постов. Пользователи могут создать учетную запись, публиковать записи, подписываться на любимых авторов и отмечать понравившиеся записи.
 
-### Как запустить проект (для Windows)
+### Как запустить проект
 Клонируйте репозиторий на свой компьютер:
 ```
 git clone git@github.com:Seleznev808/api_yatube.git
@@ -14,9 +14,17 @@ git clone git@github.com:Seleznev808/api_yatube.git
 cd api_yatube
 python -m venv venv
 ```
-Активируйте виртуальное окружение и установите зависимости:
+Активируйте виртуальное окружение:
+* Если у вас Linux/macOS
+    ```
+    source env/bin/activate
+    ```
+* Если у вас Windows
+    ```
+    source env/scripts/activate
+    ```
+Установите зависимости:
 ```
-source venv/Scripts/activate
 pip install -r requirements.txt
 ```
 Создайте файл .env в директории yatube_api/, внесите в него необходимые значения:
