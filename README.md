@@ -1,3 +1,33 @@
-# hw05_final
+# yatube
 
-[![CI](https://github.com/yandex-praktikum/hw05_final/actions/workflows/python-app.yml/badge.svg?branch=master)](https://github.com/yandex-praktikum/hw05_final/actions/workflows/python-app.yml)
+## Описание
+
+Социальная сеть для публикации постов. Пользователи могут создать учетную запись, публиковать записи, подписываться на любимых авторов и отмечать понравившиеся записи.
+
+### Как запустить проект (для Windows)
+Клонируйте репозиторий на свой компьютер:
+```
+git clone git@github.com:Seleznev808/api_yatube.git
+```
+Перейдите в него в командной строке и разверните виртуальное окружение:
+```
+cd api_yatube
+python -m venv venv
+```
+Активируйте виртуальное окружение и установите зависимости:
+```
+source venv/Scripts/activate
+pip install -r requirements.txt
+```
+Создайте файл .env в директории yatube_api/, внесите в него необходимые значения:
+```
+SECRET_KEY='ваш секретный ключ'
+```
+Выполните миграции:
+```
+python manage.py migrate
+```
+Запустите проект:
+```
+python manage.py runserver
+```
